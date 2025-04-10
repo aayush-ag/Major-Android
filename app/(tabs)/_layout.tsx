@@ -37,7 +37,14 @@ export default function TabLayout() {
                 name="chat"
                 options={{
                     title: 'Chat',
-                    tabBarIcon: ({color}) => <IconSymbol size={28} name="bubble.chart" color={color}/>,
+                    tabBarIcon: ({color}) => <IconSymbol size={28} name="ellipses.bubble" color={color}/>,
+                }}
+            />
+            <Tabs.Screen
+                name="settings"
+                options={{
+                    title: 'Settings',
+                    tabBarIcon: ({color}) => <IconSymbol size={28} name="gear" color={color}/>,
                 }}
             />
             <Tabs.Screen
