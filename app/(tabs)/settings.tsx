@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
     Alert,
     ScrollView,
+    View,
 } from 'react-native';
+import { ThemedView } from '@/components/ThemedView';
 
 export default function SettingsScreen() {
     const [settings, setSettings] = useState({
@@ -40,99 +41,114 @@ export default function SettingsScreen() {
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Settings</Text>
+        <ThemedView style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                {/* Header Section */}
+                <View style={styles.header}>
+                </View>
 
-            {/* Name */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>Name</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Name"
-                    value={settings.name}
-                    onChangeText={(text) => handleInputChange('name', text)}
-                />
-            </View>
+                {/* Title */}
+                <Text style={styles.title}>Settings</Text>
 
-            {/* API Endpoint */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>API Endpoint</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter API Endpoint"
-                    value={settings.apiEndpoint}
-                    onChangeText={(text) => handleInputChange('apiEndpoint', text)}
-                />
-            </View>
+                {/* Name */}
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Name</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Name"
+                        value={settings.name}
+                        onChangeText={(text) => handleInputChange('name', text)}
+                    />
+                </View>
 
-            {/* Bluetooth ID */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>Bluetooth ID</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Bluetooth ID"
-                    value={settings.bluetoothId}
-                    onChangeText={(text) => handleInputChange('bluetoothId', text)}
-                />
-            </View>
+                {/* API Endpoint */}
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>API Endpoint</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter API Endpoint"
+                        value={settings.apiEndpoint}
+                        onChangeText={(text) => handleInputChange('apiEndpoint', text)}
+                    />
+                </View>
 
-            {/* Advanced Settings Toggle */}
-            <TouchableOpacity
-                style={styles.advancedToggle}
-                onPress={() => setShowAdvanced(!showAdvanced)}
-            >
-                <Text style={styles.advancedToggleText}>
-                    {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
-                </Text>
-            </TouchableOpacity>
+                {/* Bluetooth ID */}
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Bluetooth ID</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Bluetooth ID"
+                        value={settings.bluetoothId}
+                        onChangeText={(text) => handleInputChange('bluetoothId', text)}
+                    />
+                </View>
 
-            {/* Advanced Settings */}
-            {showAdvanced && (
-                <>
-                    {/* Timeout */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Timeout (seconds)</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter Timeout"
-                            value={settings.timeout}
-                            keyboardType="numeric"
-                            onChangeText={(text) => handleInputChange('timeout', text)}
-                        />
-                    </View>
+                {/* Advanced Settings Toggle */}
+                <TouchableOpacity
+                    style={styles.advancedToggle}
+                    onPress={() => setShowAdvanced(!showAdvanced)}
+                >
+                    <Text style={styles.advancedToggleText}>
+                        {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
+                    </Text>
+                </TouchableOpacity>
 
-                    {/* Max Retries */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Max Retries</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter Max Retries"
-                            value={settings.maxRetries}
-                            keyboardType="numeric"
-                            onChangeText={(text) => handleInputChange('maxRetries', text)}
-                        />
-                    </View>
-                </>
-            )}
+                {/* Advanced Settings */}
+                {showAdvanced && (
+                    <>
+                        {/* Timeout */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Timeout (seconds)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter Timeout"
+                                value={settings.timeout}
+                                keyboardType="numeric"
+                                onChangeText={(text) => handleInputChange('timeout', text)}
+                            />
+                        </View>
 
-            {/* Save Button */}
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save Settings</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                        {/* Max Retries */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Max Retries</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter Max Retries"
+                                value={settings.maxRetries}
+                                keyboardType="numeric"
+                                onChangeText={(text) => handleInputChange('maxRetries', text)}
+                            />
+                        </View>
+                    </>
+                )}
+
+                {/* Save Button */}
+                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                    <Text style={styles.saveButtonText}>Save Settings</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        padding: 16,
         backgroundColor: '#f5f5f5',
+    },
+    scrollContainer: {
         padding: 20,
+    },
+    header: {
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 50,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20,
         textAlign: 'center',
     },
     inputGroup: {
