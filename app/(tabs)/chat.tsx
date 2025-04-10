@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ThemedView } from '@/components/ThemedView';
+import { BleManager, Device } from 'react-native-ble-plx';
+import {apiEndpoint, basicAuth} from "@/app/api";
 
 export default function ChatScreen() {
     const [messages, setMessages] = useState([
@@ -21,8 +23,74 @@ export default function ChatScreen() {
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
     const flatListRef = useRef(null);
+    const [nearestNode, setNearestNode] = useState<any>(null);
+    const [neighborNode, setNeighborNode] = useState<any>(null);
+    const [nodes, setNodes] = useState<any[]>([]);
+    const [scanning, setScanning] = useState(false);
+    const manager = new BleManager();
 
-    const basicAuth = `Basic ${btoa('admin:KHtj9wOh3WUtHDnM3thIzNDkmk3eDn5z')}`;
+    const fetchNodes = async () => {
+        try {
+            const response = await fetch(`${apiEndpoint}/nodes/`, {
+                method: 'GET',
+                headers: {
+                    Authorization: basicAuth,
+                },
+            });
+            const data = await response.json();
+            setNodes(data.devices || []); // Update to match the new structure
+        } catch (error) {
+            Alert.alert('Error', 'Failed to fetch nodes from the server.');
+        }
+    };
+
+    const startScan = async () => {
+        setScanning(true);
+        const devicesMap = new Map<string, Device>(); // Map to ensure unique devices by ID
+
+        manager.startDeviceScan(null, null, (error, scannedDevice) => {
+            if (error) {
+                setScanning(false);
+                return;
+            }
+
+            if (scannedDevice) {
+                // Update or add the device in the Map
+                devicesMap.set(scannedDevice.id, {
+                    ...scannedDevice,
+                    rssi: scannedDevice.rssi, // Update RSSI value if already exists
+                });
+            }
+        });
+
+        // Stop scanning after 10 seconds
+        setTimeout(() => {
+            manager.stopDeviceScan();
+            setScanning(false);
+            const scannedDevices = Array.from(devicesMap.values());
+            compareDevicesToNodes(scannedDevices);
+        }, 10000);
+    };
+
+    const compareDevicesToNodes = (scannedDevices: Device[]) => {
+        if (scannedDevices.length === 0 || nodes.length === 0) {
+            Alert.alert('No Data', 'No devices or nodes available for comparison.');
+            return;
+        }
+
+        const matchingDevices = scannedDevices.filter((device) => {
+            return nodes.some((node: { id: string }) => node.id.trim().toUpperCase() === device.id.trim().toUpperCase());
+        });
+
+        if (matchingDevices.length === 0) {
+            Alert.alert('No Matches', 'No matching devices found in the node list.');
+            return;
+        }
+
+        const sortedDevices = matchingDevices.sort((a, b) => (b.rssi || -Infinity) - (a.rssi || -Infinity));
+        setNearestNode(sortedDevices[0]); // Nearest
+        setNeighborNode(sortedDevices[1] || null); // Neighbor (if exists)
+    };
 
     const handleSend = async () => {
         if (inputText.trim()) {
@@ -32,16 +100,16 @@ export default function ChatScreen() {
 
             try {
                 setLoading(true);
-                const response = await fetch('https://major.waferclabs.com:16384/chat/', {
+                const response = await fetch(`${apiEndpoint}/chat/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: basicAuth,
                     },
                     body: JSON.stringify({
-                        nearest: 'demo_value',
-                        neighbour: ['demo_value'],
-                        name: 'demo_value',
+                        nearest: nearestNode?.id || 'N/A',
+                        neighbour: neighborNode ? [neighborNode.id] : [],
+                        name: nearestNode?.name || 'Unknown',
                         prompt: inputText,
                     }),
                 });
@@ -54,7 +122,6 @@ export default function ChatScreen() {
                 };
                 setMessages((prevMessages) => [...prevMessages, botMessage]);
             } catch (error) {
-                console.error('Error fetching API:', error);
                 const errorMessage = {
                     id: Date.now().toString(),
                     text: 'Failed to fetch response. Please try again later.',
@@ -150,9 +217,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20, // Horizontal padding for spacing
-        paddingVertical: 20, // Adjust vertical padding for better spacing
-        height: 70, // Increase height for a WhatsApp-like header
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        height: 70,
         backgroundColor: '#ffffff',
         borderBottomWidth: 1,
         borderBottomColor: '#cccccc',
