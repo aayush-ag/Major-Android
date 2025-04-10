@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    View,
     Text,
     TextInput,
     TouchableOpacity,
     StyleSheet,
     Alert,
     ActivityIndicator,
+    View,
 } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
-import {apiEndpoint, basicAuth} from "@/app/api";
+import { ThemedView } from '@/components/ThemedView';
+import { apiEndpoint, basicAuth } from '@/app/api';
 
 export default function NodeInsertScreen() {
     const [id, setId] = useState('');
@@ -39,7 +40,7 @@ export default function NodeInsertScreen() {
         console.log('Sending node data:', nodeData);
 
         try {
-            const response = await fetch('${apiEndpoint}/nodes/insert', {
+            const response = await fetch(`${apiEndpoint}/nodes/insert`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -97,7 +98,7 @@ export default function NodeInsertScreen() {
         console.log('Sending neighbour count data:', neighbourData);
 
         try {
-            const response = await fetch('${apiEndpoint}/neighbours/insert', {
+            const response = await fetch(`${apiEndpoint}/neighbours/insert`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -155,9 +156,15 @@ export default function NodeInsertScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Node Insert and Neighbour Monitor</Text>
+        <ThemedView style={styles.container}>
+            {/* Header Section */}
+            <View style={styles.header}>
+            </View>
 
+            {/* Title */}
+            <Text style={styles.title}>Node Start</Text>
+
+            {/* Input Fields */}
             <TextInput
                 style={styles.input}
                 placeholder="Enter ID"
@@ -171,6 +178,7 @@ export default function NodeInsertScreen() {
                 onChangeText={setLocation}
             />
 
+            {/* Buttons */}
             <TouchableOpacity
                 style={[styles.button, running && styles.buttonDisabled]}
                 onPress={startProcess}
@@ -187,8 +195,9 @@ export default function NodeInsertScreen() {
                 <Text style={styles.buttonText}>Stop Process</Text>
             </TouchableOpacity>
 
+            {/* Loading Indicator */}
             {loading && <ActivityIndicator size="large" color="#4caf50" />}
-        </View>
+        </ThemedView>
     );
 }
 
@@ -197,6 +206,17 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 16,
         backgroundColor: '#f5f5f5',
+    },
+    header: {
+        width: '100%', // Extend header to full width
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 50,
+    },
+    headerText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#000000',
     },
     title: {
         fontSize: 24,
@@ -210,15 +230,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 5,
         paddingHorizontal: 10,
-        marginBottom: 10,
         backgroundColor: '#fff',
+        marginBottom: 12,
     },
     button: {
         backgroundColor: '#4caf50',
-        padding: 10,
+        padding: 15,
         borderRadius: 5,
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     buttonDisabled: {
         backgroundColor: '#9e9e9e',

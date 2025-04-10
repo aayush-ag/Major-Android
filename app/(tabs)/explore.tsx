@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    View,
     Text,
     FlatList,
     TouchableOpacity,
@@ -8,9 +7,11 @@ import {
     PermissionsAndroid,
     Alert,
     Platform,
+    View,
 } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
-import {basicAuth, apiEndpoint} from "@/app/api";
+import { ThemedView } from '@/components/ThemedView';
+import { basicAuth, apiEndpoint } from '@/app/api';
 
 export default function TabTwoScreen() {
     const [devices, setDevices] = useState<Device[]>([]);
@@ -49,7 +50,7 @@ export default function TabTwoScreen() {
 
     const fetchNodes = async () => {
         try {
-            const response = await fetch('${apiEndpoint}/nodes/', {
+            const response = await fetch(`${apiEndpoint}/nodes/`, {
                 method: 'GET',
                 headers: {
                     Authorization: basicAuth,
@@ -118,11 +119,11 @@ export default function TabTwoScreen() {
         setNearestNode(sortedDevices[0]); // Nearest
         setNeighborNode(sortedDevices[1] || null); // Neighbor (if exists)
 
-        console.log("Nearest Node:", sortedDevices[0]);
+        console.log('Nearest Node:', sortedDevices[0]);
         if (sortedDevices[1]) {
-            console.log("Neighbor Node:", sortedDevices[1]);
+            console.log('Neighbor Node:', sortedDevices[1]);
         } else {
-            console.log("No Neighbor Node found.");
+            console.log('No Neighbor Node found.');
         }
     };
 
@@ -135,7 +136,15 @@ export default function TabTwoScreen() {
     );
 
     return (
-        <View style={styles.container}>
+        <ThemedView style={styles.container}>
+            {/* Header Section */}
+            <View style={styles.header}>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.title}>Explore Bluetooth Devices</Text>
+
+            {/* Scan Button */}
             <TouchableOpacity
                 style={[styles.scanButton, scanning && styles.scanButtonDisabled]}
                 onPress={() => {
@@ -146,19 +155,23 @@ export default function TabTwoScreen() {
             >
                 <Text style={styles.scanButtonText}>{scanning ? 'Scanning...' : 'Start Scan'}</Text>
             </TouchableOpacity>
+
+            {/* Device List */}
             <FlatList
                 data={devices}
                 keyExtractor={(item) => item.id}
                 renderItem={renderDevice}
                 ListEmptyComponent={<Text style={styles.emptyListText}>No devices found.</Text>}
             />
+
+            {/* Result Section */}
             {nearestNode && (
                 <View style={styles.resultContainer}>
                     <Text style={styles.resultText}>Nearest Node: {nearestNode.name || nearestNode.id}</Text>
                     {neighborNode && <Text style={styles.resultText}>Neighbor: {neighborNode.name || neighborNode.id}</Text>}
                 </View>
             )}
-        </View>
+        </ThemedView>
     );
 }
 
@@ -167,6 +180,23 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 16,
         backgroundColor: '#f5f5f5',
+    },
+    header: {
+        width: '100%', // Extend header to full width
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 50,
+    },
+    headerText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#000000',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20,
     },
     scanButton: {
         backgroundColor: '#4caf50',

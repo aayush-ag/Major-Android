@@ -164,7 +164,6 @@ export default function ChatScreen() {
 
     return (
         <ThemedView style={styles.container}>
-            {/* Chat Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={handleClearChat} style={{ alignSelf: 'center' }}>
                     <MaterialIcons name="more-vert" size={24} color="#000" />
