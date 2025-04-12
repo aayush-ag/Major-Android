@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     FlatList,
     StyleSheet,
@@ -10,11 +10,12 @@ import {
     Platform,
     ActivityIndicator,
     Alert,
+    Animated,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ThemedView } from '@/components/ThemedView';
 import { BleManager, Device } from 'react-native-ble-plx';
-import {apiEndpoint, basicAuth} from "@/app/api";
+import { apiEndpoint, basicAuth } from "@/app/api";
 
 export default function ChatScreen() {
     const [messages, setMessages] = useState([
@@ -38,7 +39,7 @@ export default function ChatScreen() {
                 },
             });
             const data = await response.json();
-            setNodes(data.devices || []); // Update to match the new structure
+            setNodes(data.devices || []);
         } catch (error) {
             Alert.alert('Error', 'Failed to fetch nodes from the server.');
         }
@@ -46,7 +47,7 @@ export default function ChatScreen() {
 
     const startScan = async () => {
         setScanning(true);
-        const devicesMap = new Map<string, Device>(); // Map to ensure unique devices by ID
+        const devicesMap = new Map<string, Device>();
 
         manager.startDeviceScan(null, null, (error, scannedDevice) => {
             if (error) {
@@ -55,15 +56,13 @@ export default function ChatScreen() {
             }
 
             if (scannedDevice) {
-                // Update or add the device in the Map
                 devicesMap.set(scannedDevice.id, {
                     ...scannedDevice,
-                    rssi: scannedDevice.rssi, // Update RSSI value if already exists
+                    rssi: scannedDevice.rssi,
                 });
             }
         });
 
-        // Stop scanning after 10 seconds
         setTimeout(() => {
             manager.stopDeviceScan();
             setScanning(false);
@@ -88,8 +87,8 @@ export default function ChatScreen() {
         }
 
         const sortedDevices = matchingDevices.sort((a, b) => (b.rssi || -Infinity) - (a.rssi || -Infinity));
-        setNearestNode(sortedDevices[0]); // Nearest
-        setNeighborNode(sortedDevices[1] || null); // Neighbor (if exists)
+        setNearestNode(sortedDevices[0]);
+        setNeighborNode(sortedDevices[1] || null);
     };
 
     const handleSend = async () => {
@@ -162,6 +161,44 @@ export default function ChatScreen() {
         );
     };
 
+    const TypingIndicator = () => {
+        const dot1 = useRef(new Animated.Value(0)).current;
+        const dot2 = useRef(new Animated.Value(0)).current;
+        const dot3 = useRef(new Animated.Value(0)).current;
+
+        useEffect(() => {
+            const animateDot = (dot, delay) => {
+                Animated.loop(
+                    Animated.sequence([
+                        Animated.timing(dot, {
+                            toValue: 1,
+                            duration: 300,
+                            useNativeDriver: true,
+                            delay,
+                        }),
+                        Animated.timing(dot, {
+                            toValue: 0,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                    ])
+                ).start();
+            };
+
+            animateDot(dot1, 0);
+            animateDot(dot2, 300);
+            animateDot(dot3, 600);
+        }, [dot1, dot2, dot3]);
+
+        return (
+            <View style={styles.typingContainer}>
+                <Animated.View style={[styles.dot, { opacity: dot1 }]} />
+                <Animated.View style={[styles.dot, { opacity: dot2 }]} />
+                <Animated.View style={[styles.dot, { opacity: dot3 }]} />
+            </View>
+        );
+    };
+
     return (
         <ThemedView style={styles.container}>
             <View style={styles.header}>
@@ -170,22 +207,18 @@ export default function ChatScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Chat Messages */}
             <FlatList
                 ref={flatListRef}
                 data={messages}
                 keyExtractor={(item) => item.id}
                 renderItem={renderMessage}
                 contentContainerStyle={styles.chatContainer}
-                ListHeaderComponent={<View style={styles.spacer} />} // Add a spacer at the top
+                ListFooterComponent={loading ? <TypingIndicator /> : null}
                 onContentSizeChange={() =>
                     flatListRef.current?.scrollToEnd({ animated: true })
                 }
             />
 
-            {loading && <ActivityIndicator size="small" color="#4caf50" style={styles.loadingIndicator} />}
-
-            {/* Input Section */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={styles.inputContainer}
@@ -298,5 +331,22 @@ const styles = StyleSheet.create({
     },
     loadingIndicator: {
         marginBottom: 10,
+    },
+    typingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 10,
+        backgroundColor: '#e0e0e0',
+        borderRadius: 20,
+        alignSelf: 'flex-start',
+        marginTop: 8,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        marginHorizontal: 2,
+        borderRadius: 3,
+        backgroundColor: '#000',
     },
 });
