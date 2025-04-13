@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { ThemedView } from '@/components/ThemedView';
-import { apiEndpoint, basicAuth } from '@/app/api';
+import {basicAuth, getApiEndpoint} from '@/app/api';
 
 export default function NodeInsertScreen() {
     const [id, setId] = useState('');
@@ -40,6 +40,7 @@ export default function NodeInsertScreen() {
         console.log('Sending node data:', nodeData);
 
         try {
+            const apiEndpoint = await getApiEndpoint();
             const response = await fetch(`${apiEndpoint}/nodes/insert`, {
                 method: 'POST',
                 headers: {
@@ -98,6 +99,7 @@ export default function NodeInsertScreen() {
         console.log('Sending neighbour count data:', neighbourData);
 
         try {
+            const apiEndpoint = await getApiEndpoint();
             const response = await fetch(`${apiEndpoint}/neighbours/insert`, {
                 method: 'POST',
                 headers: {

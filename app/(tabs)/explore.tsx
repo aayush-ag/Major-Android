@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { ThemedView } from '@/components/ThemedView';
-import { basicAuth, apiEndpoint } from '@/app/api';
+import { basicAuth, getApiEndpoint } from '@/app/api';
 
 export default function TabTwoScreen() {
     const [devices, setDevices] = useState<Device[]>([]);
@@ -50,6 +50,7 @@ export default function TabTwoScreen() {
 
     const fetchNodes = async () => {
         try {
+            const apiEndpoint = await getApiEndpoint();
             const response = await fetch(`${apiEndpoint}/nodes/`, {
                 method: 'GET',
                 headers: {

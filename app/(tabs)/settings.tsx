@@ -8,29 +8,48 @@ import {
     ScrollView,
     View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function SettingsScreen() {
     const [settings, setSettings] = useState({
-        name: '', // Device/User name
-        apiEndpoint: 'https://example.com', // Default API endpoint
-        bluetoothId: '', // Default Bluetooth ID
-        timeout: '30', // Default timeout in seconds
-        maxRetries: '3', // Default number of retries
+        name: 'Aayush', // User name
+        apiEndpoint: 'https://major.waferclabs.com:16384', // Default API endpoint
     });
 
-    const [showAdvanced, setShowAdvanced] = useState(false); // Toggle for advanced settings
+    // Key for AsyncStorage
+    const STORAGE_KEY = 'app_settings';
 
-    const handleSave = () => {
+    useEffect(() => {
+        // Load settings from AsyncStorage when the component mounts
+        const loadSettings = async () => {
+            try {
+                const savedSettings = await AsyncStorage.getItem(STORAGE_KEY);
+                if (savedSettings) {
+                    setSettings(JSON.parse(savedSettings));
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        };
+        loadSettings();
+    }, []);
+
+    const handleSave = async () => {
         // Validate basic settings
-        if (!settings.name.trim() || !settings.apiEndpoint.trim() || !settings.bluetoothId.trim()) {
-            Alert.alert('Error', 'Name, API Endpoint, and Bluetooth ID are required.');
+        if (!settings.name.trim() || !settings.apiEndpoint.trim()) {
+            Alert.alert('Error', 'Name and API Endpoint are required.');
             return;
         }
 
-        // Save settings (you can integrate AsyncStorage or any state management library here)
-        console.log('Settings saved:', settings);
-        Alert.alert('Success', 'Settings have been saved successfully!');
+        try {
+            // Save settings to AsyncStorage
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            Alert.alert('Success', 'Settings have been saved successfully!');
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            Alert.alert('Error', 'Failed to save settings. Please try again.');
+        }
     };
 
     const handleInputChange = (name, value) => {
@@ -44,8 +63,7 @@ export default function SettingsScreen() {
         <ThemedView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 {/* Header Section */}
-                <View style={styles.header}>
-                </View>
+                <View style={styles.header}></View>
 
                 {/* Title */}
                 <Text style={styles.title}>Settings</Text>
@@ -71,45 +89,6 @@ export default function SettingsScreen() {
                         onChangeText={(text) => handleInputChange('apiEndpoint', text)}
                     />
                 </View>
-
-                {/* Advanced Settings Toggle */}
-                <TouchableOpacity
-                    style={styles.advancedToggle}
-                    onPress={() => setShowAdvanced(!showAdvanced)}
-                >
-                    <Text style={styles.advancedToggleText}>
-                        {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
-                    </Text>
-                </TouchableOpacity>
-
-                {/* Advanced Settings */}
-                {showAdvanced && (
-                    <>
-                        {/* Timeout */}
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Timeout (seconds)</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter Timeout"
-                                value={settings.timeout}
-                                keyboardType="numeric"
-                                onChangeText={(text) => handleInputChange('timeout', text)}
-                            />
-                        </View>
-
-                        {/* Max Retries */}
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Max Retries</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter Max Retries"
-                                value={settings.maxRetries}
-                                keyboardType="numeric"
-                                onChangeText={(text) => handleInputChange('maxRetries', text)}
-                            />
-                        </View>
-                    </>
-                )}
 
                 {/* Save Button */}
                 <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
@@ -155,15 +134,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingHorizontal: 10,
         backgroundColor: '#ffffff',
-    },
-    advancedToggle: {
-        marginBottom: 20,
-        alignItems: 'center',
-    },
-    advancedToggleText: {
-        fontSize: 16,
-        color: '#4caf50',
-        fontWeight: 'bold',
     },
     saveButton: {
         backgroundColor: '#4caf50',

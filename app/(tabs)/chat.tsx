@@ -16,7 +16,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ThemedView } from '@/components/ThemedView';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { Audio } from 'expo-av';
-import { apiEndpoint, basicAuth } from "@/app/api";
+import {getApiEndpoint, basicAuth, getName} from "@/app/api";
 import uuid from 'react-native-uuid';
 
 export default function ChatScreen() {
@@ -36,8 +36,8 @@ export default function ChatScreen() {
     const [recordingDuration, setRecordingDuration] = useState(0);
     const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-
     const fetchNodes = async () => {
+        const apiEndpoint = await getApiEndpoint();
         try {
             const response = await fetch(`${apiEndpoint}/nodes/`, {
                 method: 'GET',
@@ -106,6 +106,8 @@ export default function ChatScreen() {
 
             try {
                 setLoading(true);
+                const apiEndpoint = await getApiEndpoint();
+                const name = await getName();
                 const response = await fetch(`${apiEndpoint}/chat/`, {
                     method: 'POST',
                     headers: {
@@ -115,7 +117,7 @@ export default function ChatScreen() {
                     body: JSON.stringify({
                         nearest: nearestNode?.id || 'N/A',
                         neighbour: neighborNode ? [neighborNode.id] : [],
-                        name: nearestNode?.name || 'Unknown',
+                        name: name || 'Unknown',
                         prompt: inputText,
                     }),
                 });
@@ -279,7 +281,7 @@ export default function ChatScreen() {
 
             if (uri) {
                 console.log('Recording saved to:', uri);
-                sendVoiceMessage(uri);
+                await sendVoiceMessage(uri);
             }
         } catch (error) {
             console.error('Error stopping recording:', error);
@@ -290,9 +292,10 @@ export default function ChatScreen() {
     };
 
     const sendVoiceMessage = async (audioUri: string) => {
+        const name = await getName();
         const formData = new FormData();
-        formData.append('nearest', 'aa');
-        formData.append('name', 'Aayush');
+        formData.append('nearest', nearestNode?.id);
+        formData.append('name', name);
         formData.append('audio', {
             uri: audioUri,
             type: 'audio/mpeg',
@@ -301,6 +304,7 @@ export default function ChatScreen() {
 
         try {
             setLoading(true);
+            const apiEndpoint = await getApiEndpoint();
             const response = await fetch(`${apiEndpoint}/voicechat/`, {
                 method: 'POST',
                 headers: {
