@@ -1,23 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Text,
-    FlatList,
-    TouchableOpacity,
-    StyleSheet,
-    PermissionsAndroid,
-    Alert,
-    Platform,
-    View,
-} from 'react-native';
-import { BleManager, Device } from 'react-native-ble-plx';
-import { ThemedView } from '@/components/ThemedView';
-import { basicAuth, getApiEndpoint } from '@/app/api';
+import React, {useEffect, useState} from 'react';
+import {Alert, FlatList, PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
+import {BleManager, Device} from 'react-native-ble-plx';
+import {ThemedView} from '@/components/ThemedView';
+import {basicAuth, getApiEndpoint} from '@/app/api';
 
 export default function TabTwoScreen() {
     const [devices, setDevices] = useState<Device[]>([]);
     const [nodes, setNodes] = useState<any[]>([]);
     const [nearestNode, setNearestNode] = useState<any>(null);
     const [neighborNode, setNeighborNode] = useState<any>(null);
+    interface Node {
+        id: string;
+        location: string;
+    }
+    const [nearestNodeLocation, setNearestNodeLocation] = useState<string | null>(null);
+    const [neighborNodeLocation, setNeighborNodeLocation] = useState<Node[]>([]);
     const [scanning, setScanning] = useState(false);
     const manager = new BleManager();
 
@@ -71,7 +68,7 @@ export default function TabTwoScreen() {
         setScanning(true);
         const devicesMap = new Map<string, Device>(); // Map to ensure unique devices by ID
 
-        manager.startDeviceScan(null, null, (error, scannedDevice) => {
+        await manager.startDeviceScan(null, null, (error, scannedDevice) => {
             if (error) {
                 setScanning(false);
                 return;
@@ -103,11 +100,9 @@ export default function TabTwoScreen() {
 
         // Filter devices that match nodes
         const matchingDevices = scannedDevices.filter((device) => {
-            const isMatch = nodes.some((node: { id: string }) => {
-                const match = node.id === device.id;
-                return match;
+            return nodes.some((node: { id: string }) => {
+                return node.id === device.id;
             });
-            return isMatch;
         });
 
         if (matchingDevices.length === 0) {
@@ -119,6 +114,22 @@ export default function TabTwoScreen() {
         const sortedDevices = matchingDevices.sort((a, b) => (b.rssi || -Infinity) - (a.rssi || -Infinity));
         setNearestNode(sortedDevices[0]); // Nearest
         setNeighborNode(sortedDevices[1] || null); // Neighbor (if exists)
+
+        // Find the nearest node (the device with the highest RSSI)
+        const nearestNode = nodes.find(
+            (node: { id: string }) => node.id.trim().toUpperCase() === sortedDevices[0]?.id.trim().toUpperCase()
+        );
+
+        // Find all other nodes matching the remaining sorted devices
+        const neighborNodes = sortedDevices.slice(1).map((device) => {
+            return nodes.find(
+                (node: { id: string }) => node.id.trim().toUpperCase() === device.id.trim().toUpperCase()
+            );
+        }).filter((node) => node !== undefined); // Filter out undefined values
+
+        // Update state
+        setNearestNodeLocation(nearestNode?.location || null); // Store only the location of the nearest node
+        setNeighborNodeLocation(neighborNodes.map(node => node?.location)); // Store locations of all neighbor nodes
 
         console.log('Nearest Node:', sortedDevices[0]);
         if (sortedDevices[1]) {
@@ -169,6 +180,7 @@ export default function TabTwoScreen() {
             {nearestNode && (
                 <View style={styles.resultContainer}>
                     <Text style={styles.resultText}>Nearest Node: {nearestNode.name || nearestNode.id}</Text>
+                    {nearestNodeLocation && <Text style={styles.resultText}>Nearest Node Location: {nearestNodeLocation || ''}</Text>}
                     {neighborNode && <Text style={styles.resultText}>Neighbor: {neighborNode.name || neighborNode.id}</Text>}
                 </View>
             )}
