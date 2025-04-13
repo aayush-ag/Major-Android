@@ -23,18 +23,39 @@ export default function ChatScreen() {
     const [messages, setMessages] = useState([
         { id: '1', text: 'Hello! How can I help you today?', sender: 'bot' },
     ]);
+
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
     const flatListRef = useRef(null);
-    const [nearestNode, setNearestNode] = useState<any>(null);
-    const [neighborNode, setNeighborNode] = useState<any>(null);
+
+    const [nearestNode, setNearestNode] = useState<string | null>(null);
+
     const [nodes, setNodes] = useState<any[]>([]);
     const [scanning, setScanning] = useState(false);
+
     const manager = new BleManager();
+
     const [recordingModalVisible, setRecordingModalVisible] = useState(false);
     const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        let intervalId;
+
+        const fetchAndScan = async () => {
+            await fetchNodes();
+            await startScan();
+        };
+
+        // Start the interval when the component is mounted
+        intervalId = setInterval(fetchAndScan, 20000); // 20 seconds
+
+        // Cleanup the interval when the component is unmounted
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, []);
 
     const fetchNodes = async () => {
         const apiEndpoint = await getApiEndpoint();
@@ -56,7 +77,7 @@ export default function ChatScreen() {
         setScanning(true);
         const devicesMap = new Map<string, Device>();
 
-        manager.startDeviceScan(null, null, (error, scannedDevice) => {
+        await manager.startDeviceScan(null, null, (error, scannedDevice) => {
             if (error) {
                 setScanning(false);
                 return;
@@ -80,10 +101,10 @@ export default function ChatScreen() {
 
     const compareDevicesToNodes = (scannedDevices: Device[]) => {
         if (scannedDevices.length === 0 || nodes.length === 0) {
-            Alert.alert('No Data', 'No devices or nodes available for comparison.');
             return;
         }
 
+        // Filter scanned devices that match node IDs
         const matchingDevices = scannedDevices.filter((device) => {
             return nodes.some((node: { id: string }) => node.id.trim().toUpperCase() === device.id.trim().toUpperCase());
         });
@@ -93,9 +114,16 @@ export default function ChatScreen() {
             return;
         }
 
+        // Sort matching devices by RSSI in descending order
         const sortedDevices = matchingDevices.sort((a, b) => (b.rssi || -Infinity) - (a.rssi || -Infinity));
-        setNearestNode(sortedDevices[0]);
-        setNeighborNode(sortedDevices[1] || null);
+
+        // Find the nearest node (the device with the highest RSSI)
+        const nearestNode = nodes.find(
+            (node: { id: string }) => node.id.trim().toUpperCase() === sortedDevices[0]?.id.trim().toUpperCase()
+        );
+
+        // Update state
+        setNearestNode(nearestNode?.location || null); // Store only the location of the nearest node
     };
 
     const handleSend = async () => {
@@ -115,12 +143,12 @@ export default function ChatScreen() {
                         Authorization: basicAuth,
                     },
                     body: JSON.stringify({
-                        nearest: nearestNode?.id || 'N/A',
-                        neighbour: neighborNode ? [neighborNode.id] : [],
+                        nearest: nearestNode ?? '',
                         name: name || 'Unknown',
                         prompt: inputText,
                     }),
                 });
+
                 const data = await response.json();
 
                 const botMessage = {
@@ -176,7 +204,7 @@ export default function ChatScreen() {
         const dot3 = useRef(new Animated.Value(0)).current;
 
         useEffect(() => {
-            const animateDot = (dot, delay) => {
+            const animateDot = (dot, delay: number) => {
                 Animated.loop(
                     Animated.sequence([
                         Animated.timing(dot, {
@@ -252,9 +280,7 @@ export default function ChatScreen() {
                 setRecordingDuration((prev) => prev + 1);
             }, 1000);
 
-            console.log('Recording started');
         } catch (error) {
-            console.error('Error starting recording:', error);
             Alert.alert('Error', 'Unable to start recording. Please try again.');
         }
     };
@@ -280,11 +306,9 @@ export default function ChatScreen() {
             setRecordingDuration(0);
 
             if (uri) {
-                console.log('Recording saved to:', uri);
                 await sendVoiceMessage(uri);
             }
         } catch (error) {
-            console.error('Error stopping recording:', error);
             Alert.alert('Error', 'Unable to stop recording. Please try again.');
         } finally {
             setRecordingModalVisible(false); // Close the modal
@@ -294,7 +318,7 @@ export default function ChatScreen() {
     const sendVoiceMessage = async (audioUri: string) => {
         const name = await getName();
         const formData = new FormData();
-        formData.append('nearest', nearestNode?.id);
+        formData.append('nearest', nearestNode ?? '');
         formData.append('name', name);
         formData.append('audio', {
             uri: audioUri,
@@ -333,13 +357,11 @@ export default function ChatScreen() {
 
             setMessages((prevMessages) => [...prevMessages, transcriptionMessage, botMessage]);
         } catch (error) {
-            console.error('Error sending voice message:', error);
             Alert.alert('Error', 'Failed to send voice message. Please try again.');
         } finally {
             setLoading(false);
         }
     };
-
 
     return (
         <ThemedView style={styles.container}>
