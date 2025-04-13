@@ -72,17 +72,6 @@ export default function SettingsScreen() {
                     />
                 </View>
 
-                {/* Bluetooth ID */}
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Bluetooth ID</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Bluetooth ID"
-                        value={settings.bluetoothId}
-                        onChangeText={(text) => handleInputChange('bluetoothId', text)}
-                    />
-                </View>
-
                 {/* Advanced Settings Toggle */}
                 <TouchableOpacity
                     style={styles.advancedToggle}
